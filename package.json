@@ -9,12 +9,18 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fullcalendar/daygrid": "^6.1.19",
+    "@fullcalendar/interaction": "^6.1.19",
+    "@fullcalendar/list": "^6.1.19",
+    "@fullcalendar/react": "^6.1.19",
+    "@fullcalendar/timegrid": "^6.1.19",
     "firebase": "^12.1.0",
     "framer-motion": "^12.23.12",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.539.0",
     "next": "15.4.6",
     "react": "19.1.0",
+    "react-csv": "^2.2.2",
     "react-dom": "19.1.0",
     "react-hot-toast": "^2.5.2",
     "react-phone-input-2": "^2.15.1",
@@ -26,6 +32,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
+    "@types/react-csv": "^1.1.10",
     "@types/react-dom": "^19",
     "tailwindcss": "^4",
     "typescript": "^5"
