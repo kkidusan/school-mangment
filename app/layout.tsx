@@ -13,7 +13,8 @@ type RootLayoutProps = {
 // NetworkStatus component to handle network detection and toasts
 function NetworkStatus() {
   const { theme } = useContext(ThemeContext);
-  const offlineToastId = useRef(null);
+  // Use string | number instead of ToastId for compatibility
+  const offlineToastId = useRef<string | number | null>(null);
 
   useEffect(() => {
     const handleOnline = () => {
