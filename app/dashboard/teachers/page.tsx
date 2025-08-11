@@ -74,7 +74,7 @@ export default function Dashboard() {
   const quickStats: QuickStat[] = [
     { title: "Total Teachers", value: 45, icon: <Users className="w-6 h-6" /> },
     { title: "Active Classes", value: 32, icon: <Book className="w-6 h-6" /> },
-    { title: "Pending Tasks", value: 12, icon: <FileText className="w-6 h-6" /> },
+    { title: "Total Departments", value: 8, icon: <FileText className="w-6 h-6" /> },
     { title: "Upcoming Events", value: 5, icon: <Calendar className="w-6 h-6" /> },
     { title: "Attendance Rate", value: "95%", icon: <Clock className="w-6 h-6" /> },
     { title: "Performance Metrics", value: "82%", icon: <BarChart className="w-6 h-6" /> },
@@ -235,25 +235,26 @@ export default function Dashboard() {
         {/* Quick Stats Widgets */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           {quickStats.map((stat, index) => (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className={`p-4 rounded-lg ${
-                theme === "light" ? "bg-white" : "bg-gray-800"
-              } shadow-sm flex items-center`}
-            >
-              <div className="mr-4 text-blue-600">{stat.icon}</div>
-              <div>
-                <p className={`text-sm ${theme === "light" ? "text-zinc-600" : "text-zinc-400"}`}>
-                  {stat.title}
-                </p>
-                <p className={`text-xl font-semibold ${theme === "light" ? "text-zinc-800" : "text-zinc-100"}`}>
-                  {stat.value}
-                </p>
-              </div>
-            </motion.div>
+            <Link href={stat.title === "Total Departments" ? "/dashboard/teachers/department" : "#"} key={stat.title}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className={`p-4 rounded-lg ${
+                  theme === "light" ? "bg-white" : "bg-gray-800"
+                } shadow-sm flex items-center ${stat.title === "Total Departments" ? "cursor-pointer hover:bg-opacity-80" : ""}`}
+              >
+                <div className="mr-4 text-blue-600">{stat.icon}</div>
+                <div>
+                  <p className={`text-sm ${theme === "light" ? "text-zinc-600" : "text-zinc-400"}`}>
+                    {stat.title}
+                  </p>
+                  <p className={`text-xl font-semibold ${theme === "light" ? "text-zinc-800" : "text-zinc-100"}`}>
+                    {stat.value}
+                  </p>
+                </div>
+              </motion.div>
+            </Link>
           ))}
         </div>
 
@@ -304,6 +305,15 @@ export default function Dashboard() {
                 <Plus className="w-5 h-5 inline mr-2" />
                 New Task
               </button>
+              <Link href="/dashboard/teachers/department">
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  aria-label="Create new department"
+                >
+                  <Plus className="w-5 h-5 inline mr-2" />
+                  Create Department
+                </button>
+              </Link>
             </div>
           </div>
 

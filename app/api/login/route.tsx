@@ -30,11 +30,12 @@ export async function POST(request: Request) {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Query Firestore for user role
+    // Check admin collection
     const adminRef = collection(db, "admin");
     const adminQuery = query(adminRef, where("email", "==", user.email));
     const adminSnapshot = await getDocs(adminQuery);
 
+    // Check teachers collection
     const teacherRef = collection(db, "teachers");
     const teacherQuery = query(teacherRef, where("email", "==", user.email));
     const teacherSnapshot = await getDocs(teacherQuery);
@@ -46,15 +47,14 @@ export async function POST(request: Request) {
       role = "admin";
       token = jwt.sign(
         { userId: user.uid, email: user.email, role },
-        JWT_SECRET as string, // Type assertion to ensure JWT_SECRET is string
+        JWT_SECRET as string,
         { expiresIn: "1h" }
       );
     } else if (!teacherSnapshot.empty) {
-      const teacherData = teacherSnapshot.docs[0].data();
-      role = teacherData.role.toLowerCase(); // Normalize role to lowercase
+      role = "teacher"; // Set single teacher role
       token = jwt.sign(
         { userId: user.uid, email: user.email, role },
-        JWT_SECRET as string, // Type assertion to ensure JWT_SECRET is string
+        JWT_SECRET as string,
         { expiresIn: "1h" }
       );
     } else {

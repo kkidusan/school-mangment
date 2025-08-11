@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useContext } from "react";
@@ -49,7 +48,7 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        credentials: "include", // Include cookies for JWT
+        credentials: "include",
       });
 
       const data = await response.json();
@@ -67,14 +66,11 @@ export default function LoginPage() {
         return;
       }
 
-      // Normalize role to lowercase for consistent checking
-      const normalizedRole = data.role.toLowerCase();
-
       // Redirect based on role
-      if (normalizedRole === "admin") {
+      if (data.role === "admin") {
         router.push("/dashboard");
-      } else if (["class teacher", "subject teacher", "coordinator"].includes(normalizedRole)) {
-        router.push("/admin");
+      } else if (data.role === "teacher") {
+        router.push("/teacher");
       } else {
         setError("Invalid user role");
       }
