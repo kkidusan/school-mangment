@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useContext, useCallback } from "react";
+import { useState, useContext, useCallback, useEffect } from "react";
 import { db, auth } from "../../../firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs } from "firebase/firestore";
 import { Loader2, Mail, User, Calendar, MapPin, Phone, School, CheckCircle, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -27,6 +27,7 @@ interface FormData {
   yearOfPassing: string;
   previousSchool: string;
   subjectsGrades: string;
+  department: string;
 }
 
 interface Errors {
@@ -42,6 +43,11 @@ interface InputField {
   label: string;
   showValidation: boolean;
   conditional?: boolean;
+}
+
+interface Department {
+  id: string;
+  name: string;
 }
 
 export default function RegisterForm() {
@@ -60,10 +66,12 @@ export default function RegisterForm() {
     yearOfPassing: "",
     previousSchool: "",
     subjectsGrades: "",
+    department: "",
   });
   const [errors, setErrors] = useState<Errors>({});
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const router = useRouter();
   const context = useContext(ThemeContext);
 
@@ -71,6 +79,25 @@ export default function RegisterForm() {
     throw new Error("ThemeContext must be used within a ThemeProvider");
   }
   const { theme } = context;
+
+  // Fetch departments from Firestore
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const departmentsCollection = collection(db, "departments");
+        const departmentsSnapshot = await getDocs(departmentsCollection);
+        const departmentsList = departmentsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          name: doc.data().name
+        }));
+        setDepartments(departmentsList);
+      } catch (error) {
+        console.error("Error fetching departments:", error);
+        toast.error("Failed to load departments. Please try again.");
+      }
+    };
+    fetchDepartments();
+  }, []);
 
   // Memoize completeRegistration to prevent unnecessary re-renders
   const completeRegistration = useCallback(
@@ -92,6 +119,7 @@ export default function RegisterForm() {
           yearOfPassing: formData.yearOfPassing.trim(),
           previousSchool: formData.previousSchool.trim(),
           subjectsGrades: formData.subjectsGrades,
+          department: formData.department,
           role: "teacher",
         });
 
@@ -110,6 +138,7 @@ export default function RegisterForm() {
           yearOfPassing: "",
           previousSchool: "",
           subjectsGrades: "",
+          department: "",
         });
         setErrors({});
         setCurrentStep(1);
@@ -175,6 +204,7 @@ export default function RegisterForm() {
       else if (!validateYearOfPassing(formData.yearOfPassing)) newErrors.yearOfPassing = "Invalid year (1900-current year).";
       if (!formData.previousSchool.trim()) newErrors.previousSchool = "Previous school name is required.";
       if (!formData.subjectsGrades) newErrors.subjectsGrades = "Subjects/grades are required.";
+      if (!formData.department) newErrors.department = "Department is required.";
     }
 
     setErrors(newErrors);
@@ -251,6 +281,7 @@ export default function RegisterForm() {
       { name: "yearOfPassing", type: "text", placeholder: "Year of Passing", icon: Calendar, label: "Year of Passing", showValidation: true },
       { name: "previousSchool", type: "text", placeholder: "Previous School Name", icon: School, label: "Previous School", showValidation: false },
       { name: "subjectsGrades", type: "select", placeholder: "Select Subjects/Grades", label: "Subjects/Grades", showValidation: false },
+      { name: "department", type: "select", placeholder: "Select Department", label: "Department", showValidation: false },
     ],
   ];
 
@@ -356,28 +387,37 @@ export default function RegisterForm() {
                       >
                         {name === "gender" ? (
                           <>
-                            <option value="">Select Gender</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Other</option>
+                            <option key="gender-placeholder" value="">Select Gender</option>
+                            <option key="gender-male" value="male">Male</option>
+                            <option key="gender-female" value="female">Female</option>
+                            <option key="gender-other" value="other">Other</option>
                           </>
                         ) : name === "highestDegree" ? (
                           <>
-                            <option value="">Select Degree</option>
-                            <option value="B.Ed">B.Ed</option>
-                            <option value="M.Ed">M.Ed</option>
-                            <option value="PhD">PhD</option>
-                            <option value="MA">MA</option>
-                            <option value="BSc">BSc</option>
+                            <option key="degree-placeholder" value="">Select Degree</option>
+                            <option key="degree-bed" value="B.Ed">B.Ed</option>
+                            <option key="degree-med" value="M.Ed">M.Ed</option>
+                            <option key="degree-phd" value="PhD">PhD</option>
+                            <option key="degree-ma" value="MA">MA</option>
+                            <option key="degree-bsc" value="BSc">BSc</option>
                           </>
                         ) : name === "subjectsGrades" ? (
                           <>
-                            <option value="">Select Subjects/Grades</option>
-                            <option value="Math_1-5">Math (Grades 1-5)</option>
-                            <option value="Science_6-8">Science (Grades 6-8)</option>
-                            <option value="English_9-12">English (Grades 9-12)</option>
-                            <option value="History_6-8">History (Grades 6-8)</option>
-                            <option value="All_Primary">All Subjects (Primary)</option>
+                            <option key="subjects-placeholder" value="">Select Subjects/Grades</option>
+                            <option key="subjects-math" value="Math_1-5">Math (Grades 1-5)</option>
+                            <option key="subjects-science" value="Science_6-8">Science (Grades 6-8)</option>
+                            <option key="subjects-english" value="English_9-12">English (Grades 9-12)</option>
+                            <option key="subjects-history" value="History_6-8">History (Grades 6-8)</option>
+                            <option key="subjects-all" value="All_Primary">All Subjects (Primary)</option>
+                          </>
+                        ) : name === "department" ? (
+                          <>
+                            <option key="department-placeholder" value="">Select Department</option>
+                            {departments.map((dept) => (
+                              <option key={`department-${dept.id}`} value={dept.name}>
+                                {dept.name}
+                              </option>
+                            ))}
                           </>
                         ) : null}
                       </select>

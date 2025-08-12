@@ -15,11 +15,9 @@ interface DashboardMetrics {
   totalStudents: number;
   totalTeachers: number;
   totalClasses: number;
-  pendingApprovals: number;
   unpaidFees: number;
   upcomingExams: number;
   libraryBooks: number;
-  activeBuses: number;
 }
 
 export default function AdminDashboard() {
@@ -27,11 +25,9 @@ export default function AdminDashboard() {
     totalStudents: 0,
     totalTeachers: 0,
     totalClasses: 0,
-    pendingApprovals: 0,
     unpaidFees: 0,
     upcomingExams: 0,
     libraryBooks: 0,
-    activeBuses: 0,
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
@@ -49,7 +45,7 @@ export default function AdminDashboard() {
       try {
         const response = await fetch("/api/validate", {
           method: "GET",
-          credentials: "include", // Include cookies
+          credentials: "include",
         });
 
         if (!response.ok) {
@@ -59,7 +55,6 @@ export default function AdminDashboard() {
           return;
         }
 
-        // If response is OK, user is admin
         setIsAuthorized(true);
       } catch (error: any) {
         toast.error("Please log in as an admin to access this page");
@@ -77,28 +72,30 @@ export default function AdminDashboard() {
     const fetchMetrics = async () => {
       try {
         setIsLoading(true);
-        const ownersRef = collection(db, "owner");
+        const teachersRef = collection(db, "teachers");
         const feesRef = collection(db, "fees");
-        const [ownersSnapshot, feesSnapshot] = await Promise.all([
-          getDocs(ownersRef),
+        const [teachersSnapshot, feesSnapshot] = await Promise.all([
+          getDocs(teachersRef),
           getDocs(feesRef).catch(() => ({ docs: [] })),
         ]);
-        const pendingApprovals = ownersSnapshot.docs.filter(
-          (doc) => !doc.data().approved
-        ).length;
+
+        // Calculate total classes from teachers' assigned classes
+        const totalClasses = teachersSnapshot.docs.reduce((acc, doc) => {
+          const teacherData = doc.data();
+          return acc + (teacherData.classes?.length || 0);
+        }, 0);
+
         const unpaidFees = feesSnapshot.docs.filter(
           (doc) => doc.data().status === "unpaid"
         ).length;
 
         setMetrics({
           totalStudents: 500, // Replace with query to "students" collection
-          totalTeachers: 50, // Replace with query to "teachers" collection
-          totalClasses: 20, // Replace with query to "classes" collection
-          pendingApprovals,
+          totalTeachers: teachersSnapshot.docs.length,
+          totalClasses,
           unpaidFees,
           upcomingExams: 5, // Replace with query to "exams" collection
           libraryBooks: 1000, // Replace with query to "library" collection
-          activeBuses: 10, // Replace with query to "transport" collection
         });
         setIsLoading(false);
       } catch (error) {
@@ -115,57 +112,51 @@ export default function AdminDashboard() {
     {
       title: "Total Students",
       value: metrics.totalStudents,
-      href: "/admin/students",
+      href: "/dashboard/students",
       action: () => toast.info("View and manage student profiles"),
+      icon: "👥",
     },
     {
       title: "Total Teachers",
       value: metrics.totalTeachers,
-      href: "/admin/teachers",
+      href: "/dashboard/teachers",
       action: () => toast.info("View and manage teacher profiles"),
+      icon: "🧑‍🏫",
     },
     {
       title: "Total Classes",
       value: metrics.totalClasses,
-      href: "/admin/academics",
+      href: "/dashboard/academics",
       action: () => toast.info("Manage classes and schedules"),
-    },
-    {
-      title: "Pending Approvals",
-      value: metrics.pendingApprovals,
-      href: "/admin/students",
-      action: () => toast.info("Review and approve owner registrations"),
+      icon: "📚",
     },
     {
       title: "Unpaid Fees",
       value: metrics.unpaidFees,
-      href: "/admin/fees",
+      href: "/dashboard/fees",
       action: () => toast.info("Manage fee payments and reminders"),
+      icon: "💰",
     },
     {
       title: "Upcoming Exams",
       value: metrics.upcomingExams,
-      href: "/admin/exams",
+      href: "/dashboard/exams",
       action: () => toast.info("Schedule and manage exams"),
+      icon: "📝",
     },
     {
       title: "Library Books",
       value: metrics.libraryBooks,
-      href: "/admin/library",
+      href: "/dashboard/library",
       action: () => toast.info("Track library books and resources"),
-    },
-    {
-      title: "Active Buses",
-      value: metrics.activeBuses,
-      href: "/admin/transport",
-      action: () => toast.info("Manage bus routes and tracking"),
+      icon: "📖",
     },
   ];
 
   if (!isAuthorized) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="animate-spin text-blue-600" size={40} />
+      <div className="flex justify-center items-center h-screen bg-gray-50 dark:bg-gray-900">
+        <Loader2 className="animate-spin text-blue-600" size={48} />
       </div>
     );
   }
@@ -174,44 +165,64 @@ export default function AdminDashboard() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="max-w-7xl mx-auto"
+      transition={{ duration: 0.5 }}
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
     >
       <h1
-        className={`text-3xl font-bold mb-6 ${theme === "light" ? "text-zinc-800" : "text-zinc-100"}`}
+        className={`text-4xl font-extrabold mb-8 ${
+          theme === "light" ? "text-gray-800" : "text-gray-100"
+        } tracking-tight`}
       >
         School Management Dashboard
       </h1>
 
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-          <Loader2 className="animate-spin text-blue-600" size={40} />
+          <Loader2 className="animate-spin text-blue-600" size={48} />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-town-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {dashboardCards.map((card) => (
             <motion.div
               key={card.title}
-              className={`p-6 rounded-xl shadow-sm ${
+              className={`relative p-6 rounded-2xl shadow-lg overflow-hidden ${
                 theme === "light"
-                  ? "bg-gradient-to-br from-blue-100 to-purple-100"
-                  : "bg-gradient-to-br from-gray-700 to-gray-800"
-              }`}
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2 }}
+                  ? "bg-white border border-gray-200"
+                  : "bg-gray-800 border border-gray-700"
+              } transition-all duration-300 hover:shadow-xl`}
+              whileHover={{ scale: 1.03, y: -5 }}
+              transition={{ duration: 0.3 }}
             >
-              <h3 className={`text-lg font-semibold ${theme === "light" ? "text-zinc-700" : "text-zinc-300"}`}>
-                {card.title}
-              </h3>
-              <p className={`text-3xl font-bold ${theme === "light" ? "text-zinc-800" : "text-zinc-100"}`}>
-                {card.value}
-              </p>
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500" />
+              <div className="flex items-center space-x-4">
+                <span className="text-3xl">{card.icon}</span>
+                <div>
+                  <h3
+                    className={`text-lg font-semibold ${
+                      theme === "light" ? "text-gray-700" : "text-gray-300"
+                    }`}
+                  >
+                    {card.title}
+                  </h3>
+                  <p
+                    className={`text-3xl font-bold ${
+                      theme === "light" ? "text-gray-800" : "text-gray-100"
+                    }`}
+                  >
+                    {card.value}
+                  </p>
+                </div>
+              </div>
               <Link
                 href={card.href}
-                className={`mt-4 inline-block text-sm ${theme === "light" ? "text-blue-600 hover:text-blue-700" : "text-blue-400 hover:text-blue-500"}`}
+                className={`mt-4 inline-block text-sm font-medium ${
+                  theme === "light"
+                    ? "text-blue-600 hover:text-blue-800"
+                    : "text-blue-400 hover:text-blue-500"
+                } transition-colors duration-200`}
                 onClick={card.action}
               >
-                Manage
+                Manage →
               </Link>
             </motion.div>
           ))}
@@ -219,19 +230,25 @@ export default function AdminDashboard() {
       )}
 
       <motion.div
-        className={`mt-8 p-6 rounded-xl shadow-sm ${
-          theme === "light"
-            ? "bg-gradient-to-br from-blue-100 to-purple-100"
-            : "bg-gradient-to-br from-gray-700 to-gray-800"
+        className={`mt-10 p-6 rounded-2xl shadow-lg ${
+          theme === "light" ? "bg-white border border-gray-200" : "bg-gray-800 border border-gray-700"
         }`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
       >
-        <h2 className={`text-2xl font-semibold ${theme === "light" ? "text-zinc-700" : "text-zinc-300"} mb-4`}>
+        <h2
+          className={`text-2xl font-semibold ${
+            theme === "light" ? "text-gray-700" : "text-gray-300"
+          } mb-4`}
+        >
           Recent Activity
         </h2>
-        <p className={`text-sm ${theme === "light" ? "text-zinc-600" : "text-zinc-400"}`}>
+        <p
+          className={`text-sm ${
+            theme === "light" ? "text-gray-600" : "text-gray-400"
+          }`}
+        >
           No recent activity available. Perform actions like adding users or posting announcements to see updates here.
         </p>
       </motion.div>
