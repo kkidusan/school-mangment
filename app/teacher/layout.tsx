@@ -1,4 +1,4 @@
-// app/teacher/layout.tsx
+
 "use client";
 
 import { useState } from "react";
@@ -23,7 +23,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
         {/* Main Content */}
         <main
           className={`flex-1 p-6 transition-all duration-300 ${
-            isSidebarOpen ? "ml-64" : "ml-0"
+            isSidebarOpen ? "ml-64" : "ml-20"
           } bg-gray-100 dark:bg-gray-900`}
         >
           {children}

@@ -119,59 +119,111 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
   return (
     <motion.aside
       initial={{ x: -300 }}
-      animate={{ x: isSidebarOpen ? 0 : -300 }}
+      animate={{ x: 0 }}
       transition={{ duration: 0.3 }}
-      className={`fixed inset-y-0 left-0 z-50 w-64 ${
+      className={`fixed inset-y-0 left-0 z-50 ${
+        isSidebarOpen ? "w-64" : "w-16"
+      } ${
         theme === "light"
           ? "bg-gradient-to-b from-blue-50 to-purple-50"
           : "bg-gradient-to-b from-gray-800 to-gray-900"
-      } shadow-lg transform transition-transform duration-300 ease-in-out`}
+      } shadow-lg rounded-r-2xl transition-all duration-300 ease-in-out font-sans`}
       aria-label="Teacher Sidebar"
     >
-      <div className="p-4 flex items-center justify-between">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <img src="/teacher-profile.jpg" alt="Teacher Profile" className="w-10 h-10 rounded-full" />
-            <h2 className={`text-xl font-bold ${theme === "light" ? "text-zinc-800" : "text-zinc-100"}`}>
-              Teacher Portal
-            </h2>
+      <div className={`p-4 flex items-center ${isSidebarOpen ? "justify-between" : "justify-center"}`}>
+        {isSidebarOpen && (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <img src="/teacher-profile.jpg" alt="Teacher Profile" className="w-10 h-10 rounded-full" />
+              <h2 className={`text-xl font-bold ${theme === "light" ? "text-zinc-800" : "text-zinc-100"}`}>
+                Teacher Portal
+              </h2>
+            </div>
+            <span className={`text-sm ${theme === "light" ? "text-zinc-600" : "text-zinc-400"}`}>
+              {userEmail}
+            </span>
           </div>
-          <span className={`text-sm ${theme === "light" ? "text-zinc-600" : "text-zinc-400"}`}>
-            {userEmail}
-          </span>
+        )}
+        <div className="relative group">
+          <button
+            onClick={toggleSidebar}
+            className={`p-2 rounded-full ${
+              theme === "light" ? "text-zinc-600 hover:bg-blue-100" : "text-zinc-400 hover:bg-gray-700"
+            } transition-colors duration-200`}
+            aria-label={isSidebarOpen ? "Close Sidebar" : "Open Sidebar"}
+          >
+            {isSidebarOpen ? "←" : "→"}
+          </button>
+          {!isSidebarOpen && (
+            <span
+              className={`
+                absolute left-full ml-3 px-3 py-1.5 text-sm font-medium
+                rounded-lg shadow-lg transform translate-y-[-50%] top-1/2
+                transition-all duration-200 ease-in-out
+                opacity-0 group-hover:opacity-100 group-hover:scale-100 scale-95
+                ${
+                  theme === "light"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-indigo-800 text-indigo-100"
+                }
+              `}
+            >
+              Open Sidebar
+            </span>
+          )}
         </div>
-        <button
-          onClick={toggleSidebar}
-          className={`p-2 rounded-full ${theme === "light" ? "text-zinc-600 hover:bg-blue-100" : "text-zinc-400 hover:bg-gray-700"}`}
-          aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
-        >
-          {isSidebarOpen ? "←" : "→"}
-        </button>
       </div>
-      <nav className="mt-4 max-h-[calc(100vh-120px)] overflow-y-auto">
+      <nav className="mt-4 max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-400">
         {navItems.map((item) => (
           <Link
             key={item.name}
             href={item.href}
             onClick={item.action}
-            className={`flex items-center p-4 ${
-              theme === "light" ? "text-zinc-700 hover:bg-blue-100" : "text-zinc-300 hover:bg-gray-700"
-            } transition-colors duration-200`}
+            className={`relative flex items-center p-4 mx-2 my-1 rounded-lg ${
+              theme === "light"
+                ? "text-zinc-700 hover:bg-blue-100"
+                : "text-zinc-300 hover:bg-gray-700"
+            } transition-all duration-200 group ${isSidebarOpen ? "justify-start" : "justify-center"}`}
+            aria-label={item.name}
           >
-            <item.icon className="w-5 h-5 mr-3" />
-            <span>{item.name}</span>
+            <motion.div
+              whileHover={{ scale: 1.2 }}
+              transition={{ duration: 0.2 }}
+            >
+              <item.icon className="w-5 h-5" />
+            </motion.div>
+            {isSidebarOpen && <span className="ml-3 text-sm font-medium">{item.name}</span>}
+            {!isSidebarOpen && (
+              <span
+                className={`
+                  absolute left-full ml-3 px-3 py-1.5 text-sm font-medium
+                  rounded-lg shadow-lg transform translate-y-[-50%] top-1/2
+                  transition-all duration-200 ease-in-out
+                  opacity-0 group-hover:opacity-100 group-hover:scale-100 scale-95
+                  ${
+                    theme === "light"
+                      ? "bg-indigo-600 text-white"
+                    : "bg-indigo-800 text-indigo-100"
+                  }
+                `}
+              >
+                {item.name}
+              </span>
+            )}
           </Link>
         ))}
       </nav>
-      <div className="absolute bottom-4 p-4">
-        <button
-          className={`w-full p-2 rounded-lg text-sm ${
-            theme === "light" ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-blue-500 text-white hover:bg-blue-600"
-          }`}
-        >
-          Quick Attendance
-        </button>
-      </div>
+      {isSidebarOpen && (
+        <div className="absolute bottom-4 p-4">
+          <button
+            className={`w-full p-2 rounded-lg text-sm ${
+              theme === "light" ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-blue-500 text-white hover:bg-blue-600"
+            }`}
+          >
+            Quick Attendance
+          </button>
+        </div>
+      )}
     </motion.aside>
   );
 }

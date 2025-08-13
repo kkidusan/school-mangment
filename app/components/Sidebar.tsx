@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useContext } from "react";
+import { useContext } from "react";
 import {
   BarChart2,
   Users,
   Calendar,
   FileText,
-  Bell,
   Settings,
   DollarSign,
   BookOpen,
@@ -14,11 +13,8 @@ import {
   MessageSquare,
   Trophy,
   Shield,
-  Heart,
-  Smartphone,
-  Cloud,
-  Brain,
   LogOut,
+  Book,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -69,141 +65,100 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
   };
 
   const navItems: NavItem[] = [
-    { name: "Dashboard", icon: BarChart2, href: "/dashboard", action: undefined },
-    {
-      name: "Student Management",
-      icon: Users,
-      href: "/dashboard/students",
-      action: () => toast.info("Manage student registration, profiles, and attendance"),
-    },
-    {
-      name: "Teacher Management",
-      icon: Users,
-      href: "/dashboard/teachers",
-      action: () => toast.info("Manage teacher profiles, attendance, and performance"),
-    },
-    {
-      name: "Academic Management",
-      icon: Calendar,
-      href: "/dashboard/academics",
-      action: () => toast.info("Plan curriculum, timetables, and assignments"),
-    },
-    {
-      name: "Examinations",
-      icon: FileText,
-      href: "/dashboard/exams",
-      action: () => toast.info("Schedule exams and manage grades"),
-    },
-    {
-      name: "Fee Management",
-      icon: DollarSign,
-      href: "/dashboard/fees",
-      action: () => toast.info("Manage fee structures and payments"),
-    },
-    {
-      name: "Library Management",
-      icon: BookOpen,
-      href: "/dashboard/library",
-      action: () => toast.info("Track books and manage library resources"),
-    },
-    {
-      name: "Transport Management",
-      icon: Bus,
-      href: "/dashboard/transport",
-      action: () => toast.info("Manage bus routes and transport tracking"),
-    },
-    {
-      name: "Communication",
-      icon: MessageSquare,
-      href: "/dashboard/communication",
-      action: () => toast.info("Send announcements and manage parent-teacher communication"),
-    },
-    {
-      name: "Extracurricular",
-      icon: Trophy,
-      href: "/dashboard/extracurricular",
-      action: () => toast.info("Manage clubs, sports, and events"),
-    },
-    {
-      name: "Security & Access",
-      icon: Shield,
-      href: "/dashboard/security",
-      action: () => toast.info("Manage role-based access and security features"),
-    },
-    {
-      name: "Health & Wellness",
-      icon: Heart,
-      href: "/dashboard/health",
-      action: () => toast.info("Track student medical records and wellness"),
-    },
-    {
-      name: "Analytics & Reporting",
-      icon: BarChart2,
-      href: "/dashboard/analytics",
-      action: () => toast.info("View performance trends and financial reports"),
-    },
-    {
-      name: "Mobile App Integration",
-      icon: Smartphone,
-      href: "/dashboard/mobile",
-      action: () => toast.info("Manage mobile app features for parents and students"),
-    },
-    {
-      name: "Cloud Storage",
-      icon: Cloud,
-      href: "/dashboard/cloud",
-      action: () => toast.info("Manage cloud-based storage and backups"),
-    },
-    {
-      name: "AI Recommendations",
-      icon: Brain,
-      href: "/dashboard/ai",
-      action: () => toast.info("Configure AI-based learning recommendations"),
-    },
-    {
-      name: "Settings",
-      icon: Settings,
-      href: "/dashboard/settings",
-      action: () => toast.info("Manage school settings and configurations"),
-    },
-    {
-      name: "Logout",
-      icon: LogOut,
-      href: "#",
-      action: handleLogout,
-    },
+    { name: "Dashboard", icon: BarChart2, href: "/dashboard" },
+    { name: "Student Management", icon: Users, href: "/dashboard/students" },
+    { name: "Teacher Management", icon: Users, href: "/dashboard/teachers" },
+    { name: "Academic Management", icon: Calendar, href: "/dashboard/academics" },
+    { name: "Examinations", icon: FileText, href: "/dashboard/exams" },
+    { name: "Fee Management", icon: DollarSign, href: "/dashboard/fees" },
+    { name: "Library Management", icon: BookOpen, href: "/dashboard/library" },
+    { name: "Transport Management", icon: Bus, href: "/dashboard/transport" },
+    { name: "Communication", icon: MessageSquare, href: "/dashboard/communication" },
+    { name: "Extracurricular", icon: Trophy, href: "/dashboard/extracurricular" },
+    { name: "Security & Access", icon: Shield, href: "/dashboard/security" },
+    { name: "Courses", icon: Book, href: "/dashboard/courses" },
+    { name: "Analytics & Reporting", icon: BarChart2, href: "/dashboard/analytics" },
+    { name: "Settings", icon: Settings, href: "/dashboard/settings" },
+    { name: "Logout", icon: LogOut, href: "#", action: handleLogout },
   ];
 
   return (
     <motion.aside
       initial={{ x: -300 }}
-      animate={{ x: isSidebarOpen ? 0 : -300 }}
+      animate={{ x: 0 }}
       transition={{ duration: 0.3 }}
-      className={`fixed inset-y-0 left-0 z-50 w-64 ${
-        theme === "light" ? "bg-gradient-to-b from-blue-50 to-purple-50" : "bg-gradient-to-b from-gray-800 to-gray-900"
-      } shadow-lg transform transition-transform duration-300 ease-in-out`}
+      className={`fixed inset-y-0 left-0 z-50 ${
+        isSidebarOpen ? "w-64" : "w-16"
+      } ${
+        theme === "light"
+          ? "bg-gradient-to-b from-indigo-100/80 to-purple-100/80 backdrop-blur-lg"
+          : "bg-gradient-to-b from-gray-900/80 to-indigo-900/80 backdrop-blur-lg"
+      } shadow-2xl rounded-r-2xl transition-all duration-300 ease-in-out font-sans`}
     >
-      <div className="p-4">
-        <h2 className={`text-2xl font-bold ${theme === "light" ? "text-zinc-800" : "text-zinc-100"}`}>School Admin</h2>
+      <div className={`p-3 flex items-center ${isSidebarOpen ? "justify-between" : "justify-center"}`}>
+        {isSidebarOpen && (
+          <div className="flex items-center gap-2">
+            <img
+              src="/logo.png"
+              alt="KK School Logo"
+              className="w-8 h-8 object-contain rounded-full"
+            />
+            <h2
+              className={`text-xl font-semibold tracking-tight ${
+                theme === "light" ? "text-indigo-900" : "text-indigo-100"
+              }`}
+            >
+              KK School
+            </h2>
+          </div>
+        )}
         <button
           onClick={toggleSidebar}
-          className={`mt-4 p-2 rounded-full ${theme === "light" ? "text-zinc-600 hover:bg-blue-100" : "text-zinc-400 hover:bg-gray-700"}`}
+          className={`p-2 rounded-full ${
+            theme === "light"
+              ? "text-indigo-600 hover:bg-indigo-200/50"
+              : "text-indigo-300 hover:bg-indigo-800/50"
+          } transition-colors duration-200`}
         >
-          {isSidebarOpen ? "← Close" : "→ Open"}
+          {isSidebarOpen ? "←" : "→"}
         </button>
       </div>
-      <nav className="mt-4 max-h-[calc(100vh-120px)] overflow-y-auto">
+      <nav className="mt-2 max-h-[calc(100vh-100px)] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-400">
         {navItems.map((item) => (
           <Link
             key={item.name}
             href={item.href}
             onClick={item.action}
-            className={`flex items-center p-4 ${
-              theme === "light" ? "text-zinc-700 hover:bg-blue-100" : "text-zinc-300 hover:bg-gray-700"
-            } transition-colors duration-200`}
+            className={`relative flex items-center p-3 mx-2 my-1 rounded-lg ${
+              theme === "light"
+                ? "text-indigo-800 hover:bg-indigo-200/50"
+                : "text-indigo-200 hover:bg-indigo-800/50"
+            } transition-all duration-200 group ${isSidebarOpen ? "justify-start" : "justify-center"}`}
           >
-            <item.icon className="w-5 h-5 mr-3" />
-            <span>{item.name}</span>
+            <motion.div
+              whileHover={{ scale: 1.2 }}
+              transition={{ duration: 0.2 }}
+            >
+              <item.icon className="w-5 h-5" />
+            </motion.div>
+            {isSidebarOpen && <span className="ml-3 text-sm font-medium">{item.name}</span>}
+            {!isSidebarOpen && (
+              <span
+                className={`
+                  absolute left-full ml-3 px-3 py-1.5 text-sm font-medium
+                  rounded-lg shadow-lg transform translate-y-[-50%] top-1/2
+                  transition-all duration-200 ease-in-out
+                  opacity-0 group-hover:opacity-100 group-hover:scale-100 scale-95
+                  ${
+                    theme === "light"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-indigo-800 text-indigo-100"
+                  }
+                `}
+              >
+                {item.name}
+              </span>
+            )}
           </Link>
         ))}
       </nav>
