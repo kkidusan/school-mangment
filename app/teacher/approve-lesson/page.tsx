@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useContext } from "react";
@@ -12,6 +13,11 @@ interface Assessments {
   [key: string]: number | undefined;
 }
 
+interface Unit {
+  title: string;
+  duration: string;
+}
+
 interface LessonPlan {
   id: string;
   email: string;
@@ -19,20 +25,21 @@ interface LessonPlan {
   department: string;
   status: string;
   comments: string;
-  assessment: string;
   assessments: Assessments;
   closure: string;
   differentiation: string;
-  duration: string;
   formativeAssessment: string;
   introduction: string;
   mainActivity: string;
   materials: string;
   objectives: string;
+  semester: string;
   subject: string;
   summativeAssessment: string;
-  topic: string;
-  warmup: string;
+  standards: string;
+  units: Unit[];
+  totalUnits: number;
+  warmup: string; // Added warmup property to fix TypeScript error
 }
 
 interface Department {
@@ -51,6 +58,11 @@ export default function ApproveLessonPlans() {
   const [commentInput, setCommentInput] = useState<{ [key: string]: string }>({});
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<LessonPlan | null>(null);
+
+  // Debug state initialization
+  useEffect(() => {
+    console.log("selectedPlans initialized:", selectedPlans);
+  }, [selectedPlans]);
 
   // Validate session and get user email
   useEffect(() => {
@@ -136,50 +148,29 @@ export default function ApproveLessonPlans() {
         const plans: LessonPlan[] = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
-          if (
-            data.id &&
-            data.email &&
-            data.grade &&
-            data.department &&
-            data.subject &&
-            data.duration &&
-            data.topic &&
-            data.objectives &&
-            data.materials &&
-            data.warmup &&
-            data.introduction &&
-            data.mainActivity &&
-            data.assessment &&
-            data.closure &&
-            data.differentiation &&
-            data.formativeAssessment &&
-            data.summativeAssessment &&
-            data.status &&
-            data.assessments
-          ) {
-            plans.push({
-              id: data.id,
-              email: data.email,
-              grade: data.grade,
-              department: data.department,
-              status: data.status,
-              comments: data.comments || "",
-              assessment: data.assessment,
-              assessments: data.assessments,
-              closure: data.closure,
-              differentiation: data.differentiation,
-              duration: data.duration,
-              formativeAssessment: data.formativeAssessment,
-              introduction: data.introduction,
-              mainActivity: data.mainActivity,
-              materials: data.materials,
-              objectives: data.objectives,
-              subject: data.subject,
-              summativeAssessment: data.summativeAssessment,
-              topic: data.topic,
-              warmup: data.warmup,
-            });
-          }
+          plans.push({
+            id: data.id || "",
+            email: data.email || "",
+            grade: data.grade || "",
+            department: data.department || "",
+            status: data.status || "Draft",
+            comments: data.comments || "",
+            assessments: data.assessments || {},
+            closure: data.closure || "",
+            differentiation: data.differentiation || "",
+            formativeAssessment: data.formativeAssessment || "",
+            introduction: data.introduction || "",
+            mainActivity: data.mainActivity || "",
+            materials: data.materials || "",
+            objectives: data.objectives || "",
+            semester: data.semester || "",
+            subject: data.subject || "",
+            summativeAssessment: data.summativeAssessment || "",
+            standards: data.standards || "",
+            units: data.units || [],
+            totalUnits: data.totalUnits || 0,
+            warmup: data.warmup || "", // Ensure warmup is included
+          });
         });
         setLessonPlans(plans);
         setLoading(false);
@@ -196,7 +187,7 @@ export default function ApproveLessonPlans() {
 
   // Handle bulk actions
   const handleBulkAction = async (action: "approve" | "reject" | "revision") => {
-    if (selectedPlans.length === 0) {
+    if (!selectedPlans || selectedPlans.length === 0) {
       toast.warn("Please select at least one lesson plan.");
       return;
     }
@@ -322,33 +313,36 @@ export default function ApproveLessonPlans() {
       .filter(([_, value]) => value !== undefined && value > 0)
       .map(([type, percentage]) => `${type}: ${percentage}%`)
       .join("\n");
+    const unitDetails = plan.units.length > 0
+      ? plan.units.map((unit, index) => `Unit ${index + 1}: ${unit.title} - ${unit.duration}`).join("\n")
+      : "No units defined";
     const content = `
 Lesson Plan
 Created by: ${plan.email}
 Department: ${plan.department}
 Subject: ${plan.subject}
 Grade: ${plan.grade}
-Duration: ${plan.duration}
-Topic: ${plan.topic}
-Objectives: ${plan.objectives}
-Materials: ${plan.materials}
-Warm-up: ${plan.warmup}
-Introduction: ${plan.introduction}
-Main Activity: ${plan.mainActivity}
-Assessment: ${plan.assessment}
-Closure: ${plan.closure}
-Differentiation: ${plan.differentiation}
-Formative Assessment: ${plan.formativeAssessment}
-Summative Assessment: ${plan.summativeAssessment}
+Semester: ${plan.semester || "N/A"}
+Standards: ${plan.standards || "N/A"}
+Objectives: ${plan.objectives || "N/A"}
+Materials: ${plan.materials || "N/A"}
+Warm-up: ${plan.warmup || "N/A"}
+Introduction: ${plan.introduction || "N/A"}
+Main Activity: ${plan.mainActivity || "N/A"}
+Closure: ${plan.closure || "N/A"}
+Differentiation: ${plan.differentiation || "N/A"}
+Formative Assessment: ${plan.formativeAssessment || "N/A"}
+Summative Assessment: ${plan.summativeAssessment || "N/A"}
 Status: ${plan.status}
 Comments: ${plan.comments || "No comments"}
 Assessments:\n${assessmentDetails}
+Units:\n${unitDetails}
     `.trim();
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${plan.topic || "lesson-plan"}.txt`;
+    a.download = `${plan.subject || "lesson-plan"}.txt`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("Lesson plan exported successfully!");
@@ -404,7 +398,7 @@ Assessments:\n${assessmentDetails}
             <button
               onClick={() => handleBulkAction("approve")}
               className="p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={selectedPlans.length === 0}
+              disabled={!selectedPlans || selectedPlans.length === 0}
               title="Approve Selected"
               aria-label="Approve selected lesson plans"
             >
@@ -413,7 +407,7 @@ Assessments:\n${assessmentDetails}
             <button
               onClick={() => handleBulkAction("revision")}
               className="p-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={selectedPlans.length === 0}
+              disabled={!selectedPlans || selectedPlans.length === 0}
               title="Request Revision"
               aria-label="Request revision for selected lesson plans"
             >
@@ -422,7 +416,7 @@ Assessments:\n${assessmentDetails}
             <button
               onClick={() => handleBulkAction("reject")}
               className="p-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={selectedPlans.length === 0}
+              disabled={!selectedPlans || selectedPlans.length === 0}
               title="Reject Selected"
               aria-label="Reject selected lesson plans"
             >
@@ -441,29 +435,29 @@ Assessments:\n${assessmentDetails}
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl shadow-xl bg-white dark:bg-gray-800">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700" aria-label="Lesson Plans Table">
+          <div className="rounded-2xl shadow-xl bg-white dark:bg-gray-800">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 table-fixed" aria-label="Lesson Plans Table">
               <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
-                  <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                  <th scope="col" className="w-[5%] px-2 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                     <input
                       type="checkbox"
                       onChange={(e) =>
                         setSelectedPlans(
-                          e.target.checked ? lessonPlans.map((plan) => plan.id) : []
+                          e.target.checked && lessonPlans ? lessonPlans.map((plan) => plan.id) : []
                         )
                       }
-                      checked={selectedPlans.length === lessonPlans.length}
+                      checked={selectedPlans && lessonPlans && selectedPlans.length === lessonPlans.length}
                       className="rounded text-blue-500"
                       aria-label="Select all lesson plans"
                     />
                   </th>
-                  <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Email</th>
-                  <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Grade</th>
-                  <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Subject</th>
-                  <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                  <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Comments</th>
-                  <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                  <th scope="col" className="w-[20%] px-2 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider truncate">Email</th>
+                  <th scope="col" className="w-[10%] px-2 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider truncate">Grade</th>
+                  <th scope="col" className="w-[15%] px-2 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider truncate">Subject</th>
+                  <th scope="col" className="w-[10%] px-2 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider truncate">Status</th>
+                  <th scope="col" className="w-[30%] px-2 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider truncate">Comments</th>
+                  <th scope="col" className="w-[10%] px-2 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider truncate">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -473,25 +467,25 @@ Assessments:\n${assessmentDetails}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
                     aria-label={`Lesson plan by ${plan.email}`}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="w-[5%] px-2 py-4 whitespace-nowrap">
                       <input
                         type="checkbox"
-                        checked={selectedPlans.includes(plan.id)}
+                        checked={selectedPlans ? selectedPlans.includes(plan.id) : false}
                         onChange={() => toggleSelectPlan(plan.id)}
                         className="rounded text-blue-500"
                         aria-label={`Select lesson plan by ${plan.email}`}
                       />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    <td className="w-[20%] px-2 py-4 text-sm text-gray-900 dark:text-gray-100 truncate" title={plan.email}>
                       {plan.email}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {plan.grade}
+                    <td className="w-[10%] px-2 py-4 text-sm text-gray-900 dark:text-gray-100 truncate" title={plan.grade}>
+                      {plan.grade ? plan.grade.replace(/^grade(\d+)$/, "Grade $1") : "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      {plan.subject}
+                    <td className="w-[15%] px-2 py-4 text-sm text-gray-900 dark:text-gray-100 truncate" title={plan.subject}>
+                      {plan.subject || "N/A"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    <td className="w-[10%] px-2 py-4 text-sm text-gray-900 dark:text-gray-100 truncate">
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
                           plan.status === "Approved"
@@ -506,7 +500,7 @@ Assessments:\n${assessmentDetails}
                         {plan.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                    <td className="w-[30%] px-2 py-4 text-sm text-gray-900 dark:text-gray-100">
                       <textarea
                         value={commentInput[plan.id] || ""}
                         onChange={(e) => handleCommentChange(plan.id, e.target.value)}
@@ -516,14 +510,14 @@ Assessments:\n${assessmentDetails}
                         aria-label={`Comments for lesson plan by ${plan.email}`}
                       />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm flex space-x-3">
+                    <td className="w-[10%] px-2 py-4 text-sm flex space-x-1">
                       <div className="relative group">
                         <button
                           onClick={() => setSelectedPlan(plan)}
                           className="p-2 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800 transition-all duration-200 transform hover:scale-110"
                           aria-label={`View details for lesson plan by ${plan.email}`}
                         >
-                          <Eye className="w-5 h-5" />
+                          <Eye className="w-4 h-4" />
                         </button>
                         <span className="absolute left-1/2 -translate-x-1/2 bottom-10 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           View Details
@@ -535,7 +529,7 @@ Assessments:\n${assessmentDetails}
                           className="p-2 rounded-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-800 transition-all duration-200 transform hover:scale-110"
                           aria-label={`Approve lesson plan by ${plan.email}`}
                         >
-                          <Check className="w-5 h-5" />
+                          <Check className="w-4 h-4" />
                         </button>
                         <span className="absolute left-1/2 -translate-x-1/2 bottom-10 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           Approve
@@ -547,7 +541,7 @@ Assessments:\n${assessmentDetails}
                           className="p-2 rounded-full bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-all duration-200 transform hover:scale-110"
                           aria-label={`Request revision for lesson plan by ${plan.email}`}
                         >
-                          <RefreshCw className="w-5 h-5" />
+                          <RefreshCw className="w-4 h-4" />
                         </button>
                         <span className="absolute left-1/2 -translate-x-1/2 bottom-10 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           Request Revision
@@ -559,7 +553,7 @@ Assessments:\n${assessmentDetails}
                           className="p-2 rounded-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800 transition-all duration-200 transform hover:scale-110"
                           aria-label={`Reject lesson plan by ${plan.email}`}
                         >
-                          <XCircle className="w-5 h-5" />
+                          <XCircle className="w-4 h-4" />
                         </button>
                         <span className="absolute left-1/2 -translate-x-1/2 bottom-10 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           Reject
@@ -599,58 +593,63 @@ Assessments:\n${assessmentDetails}
             </h2>
             <div className="space-y-4 text-gray-700 dark:text-gray-300">
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Created by:</strong> {selectedPlan.email}
+                <strong className="text-blue-500 dark:text-blue-400">Created by:</strong> {selectedPlan.email || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Department:</strong> {selectedPlan.department}
+                <strong className="text-blue-500 dark:text-blue-400">Department:</strong> {selectedPlan.department || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Subject:</strong> {selectedPlan.subject}
+                <strong className="text-blue-500 dark:text-blue-400">Subject:</strong> {selectedPlan.subject || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Grade:</strong> {selectedPlan.grade}
+                <strong className="text-blue-500 dark:text-blue-400">Grade:</strong> {selectedPlan.grade ? selectedPlan.grade.replace(/^grade(\d+)$/, "Grade $1") : "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Duration:</strong> {selectedPlan.duration}
+                <strong className="text-blue-500 dark:text-blue-400">Semester:</strong> {selectedPlan.semester || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Topic:</strong> {selectedPlan.topic}
+                <strong className="text-blue-500 dark:text-blue-400">Standards:</strong> {selectedPlan.standards || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Objectives:</strong> {selectedPlan.objectives}
+                <strong className="text-blue-500 dark:text-blue-400">Objectives:</strong> {selectedPlan.objectives || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Materials:</strong> {selectedPlan.materials}
+                <strong className="text-blue-500 dark:text-blue-400">Materials:</strong> {selectedPlan.materials || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Warm-up:</strong> {selectedPlan.warmup}
+                <strong className="text-blue-500 dark:text-blue-400">Warm-up:</strong> {selectedPlan.warmup || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Introduction:</strong> {selectedPlan.introduction}
+                <strong className="text-blue-500 dark:text-blue-400">Introduction:</strong> {selectedPlan.introduction || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Main Activity:</strong> {selectedPlan.mainActivity}
+                <strong className="text-blue-500 dark:text-blue-400">Main Activity:</strong> {selectedPlan.mainActivity || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Assessment:</strong> {selectedPlan.assessment}
+                <strong className="text-blue-500 dark:text-blue-400">Closure:</strong> {selectedPlan.closure || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Closure:</strong> {selectedPlan.closure}
+                <strong className="text-blue-500 dark:text-blue-400">Differentiation:</strong> {selectedPlan.differentiation || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Differentiation:</strong> {selectedPlan.differentiation}
+                <strong className="text-blue-500 dark:text-blue-400">Formative Assessment:</strong> {selectedPlan.formativeAssessment || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Formative Assessment:</strong> {selectedPlan.formativeAssessment}
+                <strong className="text-blue-500 dark:text-blue-400">Summative Assessment:</strong> {selectedPlan.summativeAssessment || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Summative Assessment:</strong> {selectedPlan.summativeAssessment}
-              </div>
-              <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Status:</strong> {selectedPlan.status}
-              </div>
-              <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                <strong className="text-blue-500 dark:text-blue-400">Comments:</strong> {selectedPlan.comments || "No comments"}
+                <strong className="text-blue-500 dark:text-blue-400">Units:</strong>
+                <div className="ml-4">
+                  {selectedPlan.units.length > 0 ? (
+                    selectedPlan.units.map((unit, index) => (
+                      <div key={index} className="text-sm">
+                        Unit {index + 1}: {unit.title} - {unit.duration}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm">No units defined</div>
+                  )}
+                </div>
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
                 <strong className="text-blue-500 dark:text-blue-400">Assessments:</strong>
@@ -667,6 +666,12 @@ Assessments:\n${assessmentDetails}
                     <div className="text-sm">No assessments assigned</div>
                   )}
                 </div>
+              </div>
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                <strong className="text-blue-500 dark:text-blue-400">Status:</strong> {selectedPlan.status}
+              </div>
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                <strong className="text-blue-500 dark:text-blue-400">Comments:</strong> {selectedPlan.comments || "No comments"}
               </div>
               <button
                 onClick={() => handleExport(selectedPlan)}
@@ -705,6 +710,15 @@ Assessments:\n${assessmentDetails}
         }
         .overflow-y-auto::-webkit-scrollbar-thumb:hover {
           background: ${theme === "light" ? "#718096" : "#718096"};
+        }
+        .truncate {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        table {
+          width: 100%;
+          table-layout: fixed;
         }
       `}</style>
     </section>

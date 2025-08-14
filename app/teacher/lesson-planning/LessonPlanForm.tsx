@@ -18,6 +18,7 @@ interface LessonPlan {
   department: string;
   subject: string;
   grade: string;
+  semester: string;
   objectives: string;
   materials: string;
   warmup: string;
@@ -63,6 +64,7 @@ export default function LessonPlanForm({
   const [selectedFields, setSelectedFields] = useState<Record<string, boolean>>({
     subject: true,
     grade: true,
+    semester: true,
     objectives: true,
     materials: true,
     warmup: true,
@@ -76,6 +78,12 @@ export default function LessonPlanForm({
     assessments: true,
     units: true,
   });
+  const [semestersSelected, setSemestersSelected] = useState({
+    "Semester 1": false,
+    "Semester 2": false,
+    Other: false,
+  });
+  const [otherSemester, setOtherSemester] = useState("");
 
   const assessmentTypes = [
     "Final Exams",
@@ -88,9 +96,34 @@ export default function LessonPlanForm({
     "Presentation",
   ];
 
+  // Initialize semestersSelected and otherSemester when editing
+  useEffect(() => {
+    if (isEditing && lessonPlan.semester) {
+      const selectedSemesters = lessonPlan.semester.split(",");
+      const newSemestersSelected = {
+        "Semester 1": selectedSemesters.includes("Semester 1"),
+        "Semester 2": selectedSemesters.includes("Semester 2"),
+        Other: selectedSemesters.some((s) => !["Semester 1", "Semester 2"].includes(s)),
+      };
+      setSemestersSelected(newSemestersSelected);
+      const other = selectedSemesters.find((s) => !["Semester 1", "Semester 2"].includes(s));
+      setOtherSemester(other || "");
+    }
+  }, [isEditing, lessonPlan.semester]);
+
+  // Update lessonPlan.semester when semestersSelected or otherSemester changes
+  useEffect(() => {
+    const selected = Object.keys(semestersSelected)
+      .filter((key) => semestersSelected[key as keyof typeof semestersSelected])
+      .map((key) => (key === "Other" ? otherSemester : key))
+      .filter((s) => s);
+    setLessonPlan((prev) => ({ ...prev, semester: selected.join(",") }));
+  }, [semestersSelected, otherSemester, setLessonPlan]);
+
   const allFields = [
     "subject",
     "grade",
+    "semester",
     "objectives",
     "materials",
     "warmup",
@@ -107,7 +140,7 @@ export default function LessonPlanForm({
 
   // Filter fields based on selectedFields, grouped into steps
   const fields = [
-    ["subject", "grade"],
+    ["subject", "grade", "semester"],
     ["objectives", "standards"],
     ["materials", "warmup"],
     ["introduction", "mainActivity"],
@@ -181,11 +214,29 @@ export default function LessonPlanForm({
     });
   };
 
+  const handleSemesterToggle = (semester: string) => {
+    setSemestersSelected((prev) => {
+      const newSelected = { ...prev, [semester]: !prev[semester as keyof typeof prev] };
+      if (semester === "Other" && !newSelected.Other) {
+        setOtherSemester("");
+      }
+      return newSelected;
+    });
+  };
+
+  const handleOtherSemesterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOtherSemester(e.target.value);
+  };
+
   const handleCancelField = (field: string) => {
     if (field === "assessments") {
       setLessonPlan((prev) => ({ ...prev, assessments: {} }));
     } else if (field === "units") {
       setLessonPlan((prev) => ({ ...prev, units: [], totalUnits: 0 }));
+    } else if (field === "semester") {
+      setSemestersSelected({ "Semester 1": false, "Semester 2": false, Other: false });
+      setOtherSemester("");
+      setLessonPlan((prev) => ({ ...prev, semester: "" }));
     } else {
       setLessonPlan((prev) => ({ ...prev, [field]: "" }));
     }
@@ -210,12 +261,19 @@ export default function LessonPlanForm({
     return lessonPlan.units.every((unit) => unit.title && unit.duration);
   };
 
+  const validateSemesters = () => {
+    const hasSelection = Object.values(semestersSelected).some((selected) => selected);
+    if (!hasSelection) return false;
+    if (semestersSelected.Other && !otherSemester.trim()) return false;
+    return true;
+  };
+
   const handleChangeFormat = () => {
     setShowFormatModal(true);
   };
 
   const handleFieldToggle = (field: string) => {
-    if (["subject", "grade", "objectives", "introduction", "assessments", "units"].includes(field)) {
+    if (["subject", "grade", "semester", "objectives", "introduction", "assessments", "units"].includes(field)) {
       toast.warn(`${field.charAt(0).toUpperCase() + field.slice(1)} is a required field and cannot be deselected.`);
       return;
     }
@@ -264,10 +322,14 @@ export default function LessonPlanForm({
       toast.error("Grade is required and must be selected.");
       return;
     }
+    if (currentFields.includes("semester") && !validateSemesters()) {
+      toast.error("At least one semester must be selected, and if 'Other' is selected, a semester must be specified.");
+      return;
+    }
 
     // Validate other fields in the current step
     const allFilled = currentFields.every((field) =>
-      ["objectives", "introduction", "assessments", "units", "grade"].includes(field)
+      ["objectives", "introduction", "assessments", "units", "grade", "semester"].includes(field)
         ? true // Already validated above
         : lessonPlan[field as keyof LessonPlan]
     );
@@ -291,6 +353,7 @@ export default function LessonPlanForm({
           department: department,
           subject: lessonPlan.subject,
           grade: lessonPlan.grade,
+          semester: lessonPlan.semester,
           objectives: lessonPlan.objectives,
           materials: selectedFields.materials ? lessonPlan.materials : "",
           warmup: selectedFields.warmup ? lessonPlan.warmup : "",
@@ -319,6 +382,7 @@ export default function LessonPlanForm({
           department: department,
           subject: "",
           grade: "",
+          semester: "",
           objectives: "",
           materials: "",
           warmup: "",
@@ -334,6 +398,8 @@ export default function LessonPlanForm({
           units: [],
           totalUnits: 0,
         });
+        setSemestersSelected({ "Semester 1": false, "Semester 2": false, Other: false });
+        setOtherSemester("");
         setShowForm(false);
         setIsEditing(false);
         setCurrentStep(0);
@@ -521,6 +587,48 @@ export default function LessonPlanForm({
       );
     }
 
+    if (field === "semester") {
+      return (
+        <div key={field} className="animate-slide-in relative">
+          <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200 capitalize">
+            Semester *
+          </label>
+          <div className="flex flex-col space-y-3">
+            {["Semester 1", "Semester 2", "Other"].map((semester) => (
+              <div key={semester} className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  checked={semestersSelected[semester as keyof typeof semestersSelected]}
+                  onChange={() => handleSemesterToggle(semester)}
+                  className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
+                  aria-label={`Toggle ${semester}`}
+                />
+                <label className="flex-1 text-sm text-gray-700 dark:text-gray-200">{semester}</label>
+                {semester === "Other" && semestersSelected.Other && (
+                  <input
+                    type="text"
+                    value={otherSemester}
+                    onChange={handleOtherSemesterChange}
+                    className="w-40 p-2 rounded-lg border-2 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all duration-300 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    placeholder="e.g., Semester 3"
+                    aria-label="Custom semester"
+                    required
+                  />
+                )}
+              </div>
+            ))}
+            <button
+              onClick={() => handleCancelField(field)}
+              className="absolute top-0 right-0 p-2 text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors duration-200"
+              aria-label="Clear semester field"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div key={field} className="animate-slide-in relative">
         <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-200 capitalize">
@@ -588,12 +696,15 @@ export default function LessonPlanForm({
                 setShowForm(false);
                 setIsEditing(false);
                 setCurrentStep(0);
+                setSemestersSelected({ "Semester 1": false, "Semester 2": false, Other: false });
+                setOtherSemester("");
                 setLessonPlan({
                   id: "",
                   email: "",
                   department: department,
                   subject: "",
                   grade: "",
+                  semester: "",
                   objectives: "",
                   materials: "",
                   warmup: "",
@@ -684,12 +795,12 @@ export default function LessonPlanForm({
                     type="checkbox"
                     checked={selectedFields[field]}
                     onChange={() => handleFieldToggle(field)}
-                    disabled={["subject", "grade", "objectives", "introduction", "assessments", "units"].includes(field)}
+                    disabled={["subject", "grade", "semester", "objectives", "introduction", "assessments", "units"].includes(field)}
                     className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded disabled:opacity-50"
                     aria-label={`Toggle ${field} field`}
                   />
                   <label className="flex-1 text-sm text-gray-700 dark:text-gray-200 capitalize">
-                    {field} {["subject", "grade", "objectives", "introduction", "assessments", "units"].includes(field) ? "(Required)" : ""}
+                    {field} {["subject", "grade", "semester", "objectives", "introduction", "assessments", "units"].includes(field) ? "(Required)" : ""}
                   </label>
                 </div>
               ))}

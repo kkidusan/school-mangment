@@ -20,6 +20,7 @@ interface LessonPlan {
   department: string;
   subject: string;
   grade: string;
+  semester: string;
   objectives: string;
   materials: string;
   warmup: string;
@@ -54,6 +55,7 @@ export default function LessonPlanning() {
     department: "",
     subject: "",
     grade: "",
+    semester: "",
     objectives: "",
     materials: "",
     warmup: "",
@@ -157,6 +159,7 @@ export default function LessonPlanning() {
             department: data.department || "",
             subject: data.subject || "",
             grade: data.grade || "",
+            semester: data.semester || "",
             objectives: data.objectives || "",
             materials: data.materials || "",
             warmup: data.warmup || "",
@@ -216,6 +219,7 @@ Created by: ${plan.email}
 Department: ${plan.department}
 Subject: ${plan.subject}
 Grade: ${plan.grade}
+Semester: ${plan.semester}
 Standards: ${plan.standards}
 Objectives: ${plan.objectives}
 Materials: ${plan.materials}
@@ -278,6 +282,7 @@ Units:\n${unitDetails}
                 department: department,
                 subject: "",
                 grade: "",
+                semester: "",
                 objectives: "",
                 materials: "",
                 warmup: "",
@@ -319,6 +324,7 @@ Units:\n${unitDetails}
                     department: department,
                     subject: "",
                     grade: "",
+                    semester: "",
                     objectives: "",
                     materials: "",
                     warmup: "",
@@ -349,6 +355,7 @@ Units:\n${unitDetails}
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Subject *</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Grade *</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Semester *</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -358,6 +365,7 @@ Units:\n${unitDetails}
                   <tr key={plan.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{plan.subject || "N/A"}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{plan.grade ? plan.grade.replace(/^grade(\d+)$/, "Grade $1") : "N/A"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{plan.semester || "N/A"}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                       <span className={`px-2 py-1 rounded-full text-xs ${plan.status === "Draft" ? "bg-yellow-100 text-yellow-800" : "bg-green-100 text-green-800"}`}>
                         {plan.status}
@@ -469,6 +477,9 @@ Units:\n${unitDetails}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
                 <strong className="text-blue-600 dark:text-blue-400">Grade:</strong> {selectedPlan.grade ? selectedPlan.grade.replace(/^grade(\d+)$/, "Grade $1") : "N/A"}
+              </div>
+              <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                <strong className="text-blue-600 dark:text-blue-400">Semester:</strong> {selectedPlan.semester || "N/A"}
               </div>
               <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
                 <strong className="text-blue-600 dark:text-blue-400">Standards:</strong> {selectedPlan.standards || "N/A"}
