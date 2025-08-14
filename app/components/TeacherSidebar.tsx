@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useState, useContext, useEffect } from "react";
 import {
-  Calendar, BookOpen, CheckCircle, MessageSquare, Settings, LogOut,
-  Brain, FileText, Heart, Trophy, Smartphone, Upload, CheckSquare
+  Calendar, BookOpen, MessageSquare, Settings, LogOut,
+  Brain, FileText, Heart, Trophy, Smartphone, Upload, CheckSquare, Users
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,6 +17,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   href: string;
   action?: () => void;
+  subItems?: { name: string; href: string }[]; // Added for sub-navigation (e.g., grades)
 }
 
 interface SidebarProps {
@@ -31,6 +31,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [userEmail, setUserEmail] = useState("Unknown");
   const [isHOD, setIsHOD] = useState(false);
+  const [advisorGrades, setAdvisorGrades] = useState<string[]>([]);
 
   if (!context) {
     throw new Error("ThemeContext must be used within a ThemeProvider");
@@ -62,13 +63,29 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
         setIsAuthorized(true);
 
         // Real-time check for HOD status
-        const q = query(collection(db, "departments"), where("hod", "==", email));
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const hodQuery = query(collection(db, "departments"), where("hod", "==", email));
+        const unsubscribeHOD = onSnapshot(hodQuery, (querySnapshot) => {
           setIsHOD(!querySnapshot.empty);
         });
 
-        // Cleanup listener on unmount
-        return () => unsubscribe();
+        // Real-time fetch for grades where user is the advisor
+        const gradesQuery = query(collection(db, "grades"), where("advisorEmail", "==", email));
+        const unsubscribeGrades = onSnapshot(gradesQuery, (querySnapshot) => {
+          const grades = new Set<string>();
+          querySnapshot.forEach((doc) => {
+            const grade = doc.data().grade;
+            if (grade) {
+              grades.add(grade);
+            }
+          });
+          setAdvisorGrades(Array.from(grades));
+        });
+
+        // Cleanup listeners on unmount
+        return () => {
+          unsubscribeHOD();
+          unsubscribeGrades();
+        };
       } catch (error) {
         console.error("Session validation error:", error);
         router.push("/");
@@ -95,10 +112,25 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
     }
   };
 
+  // Normalize grade format (e.g., "grade2" -> "Grade 2")
+  const normalizeGrade = (grade: string) => {
+    return grade.charAt(0).toUpperCase() + grade.slice(1).replace(/(\d+)/, " $1");
+  };
+
   const navItems: NavItem[] = [
     { name: "Dashboard", icon: Calendar, href: "/teacher/" },
     { name: "Lesson Planning", icon: BookOpen, href: "/teacher/lesson-planning" },
-    { name: "Attendance", icon: CheckCircle, href: "/teacher/attendance" },
+    ...(advisorGrades.length > 0
+      ? [{
+          name: "My Classes",
+          icon: Users,
+          href: "#",
+          subItems: advisorGrades.map((grade) => ({
+            name: normalizeGrade(grade),
+            href: "/teacher/grade/",
+          })),
+        }]
+      : []),
     { name: "Assignments", icon: FileText, href: "/teacher/assignments" },
     { name: "Parent Meetings", icon: MessageSquare, href: "/teacher/meetings" },
     { name: "Extracurricular", icon: Trophy, href: "/teacher/extracurricular" },
@@ -175,42 +207,88 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
       </div>
       <nav className="mt-4 max-h-[calc(100vh-120px)] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-gray-400">
         {navItems.map((item) => (
-          <Link
-            key={item.name}
-            href={item.href}
-            onClick={item.action}
-            className={`relative flex items-center p-4 mx-2 my-1 rounded-lg ${
-              theme === "light"
-                ? "text-zinc-700 hover:bg-blue-100"
-                : "text-zinc-300 hover:bg-gray-700"
-            } transition-all duration-200 group ${isSidebarOpen ? "justify-start" : "justify-center"}`}
-            aria-label={item.name}
-          >
-            <motion.div
-              whileHover={{ scale: 1.2 }}
-              transition={{ duration: 0.2 }}
+          <div key={item.name}>
+            <Link
+              href={item.href}
+              onClick={item.action}
+              className={`relative flex items-center p-4 mx-2 my-1 rounded-lg ${
+                theme === "light"
+                  ? "text-zinc-700 hover:bg-blue-100"
+                  : "text-zinc-300 hover:bg-gray-700"
+              } transition-all duration-200 group ${isSidebarOpen ? "justify-start" : "justify-center"}`}
+              aria-label={item.name}
             >
-              <item.icon className="w-5 h-5" />
-            </motion.div>
-            {isSidebarOpen && <span className="ml-3 text-sm font-medium">{item.name}</span>}
-            {!isSidebarOpen && (
-              <span
-                className={`
-                  absolute left-full ml-3 px-3 py-1.5 text-sm font-medium
-                  rounded-lg shadow-lg transform translate-y-[-50%] top-1/2
-                  transition-all duration-200 ease-in-out
-                  opacity-0 group-hover:opacity-100 group-hover:scale-100 scale-95
-                  ${
-                    theme === "light"
-                      ? "bg-indigo-600 text-white"
-                    : "bg-indigo-800 text-indigo-100"
-                  }
-                `}
+              <motion.div
+                whileHover={{ scale: 1.2 }}
+                transition={{ duration: 0.2 }}
               >
-                {item.name}
-              </span>
+                <item.icon className="w-5 h-5" />
+              </motion.div>
+              {isSidebarOpen && <span className="ml-3 text-sm font-medium">{item.name}</span>}
+              {!isSidebarOpen && (
+                <span
+                  className={`
+                    absolute left-full ml-3 px-3 py-1.5 text-sm font-medium
+                    rounded-lg shadow-lg transform translate-y-[-50%] top-1/2
+                    transition-all duration-200 ease-in-out
+                    opacity-0 group-hover:opacity-100 group-hover:scale-100 scale-95
+                    ${
+                      theme === "light"
+                        ? "bg-indigo-600 text-white"
+                        : "bg-indigo-800 text-indigo-100"
+                    }
+                  `}
+                >
+                  {item.name}
+                </span>
+              )}
+            </Link>
+            {item.subItems && (
+              <div className={isSidebarOpen ? "ml-6" : ""}>
+                {item.subItems.map((subItem) => (
+                  <Link
+                    key={subItem.name}
+                    href={subItem.href}
+                    className={`relative flex items-center p-4 mx-2 my-1 rounded-lg ${
+                      theme === "light"
+                        ? "text-zinc-700 hover:bg-blue-100"
+                        : "text-zinc-300 hover:bg-gray-700"
+                    } transition-all duration-200 group ${
+                      isSidebarOpen ? "justify-start" : "justify-center"
+                    }`}
+                    aria-label={subItem.name}
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.2 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Users className="w-5 h-5" />
+                    </motion.div>
+                    {isSidebarOpen && (
+                      <span className="ml-3 text-sm font-medium">{subItem.name}</span>
+                    )}
+                    {!isSidebarOpen && (
+                      <span
+                        className={`
+                          absolute left-full ml-3 px-3 py-1.5 text-sm font-medium
+                          rounded-lg shadow-lg transform translate-y-[-50%] top-1/2
+                          transition-all duration-200 ease-in-out
+                          opacity-0 group-hover:opacity-100 group-hover:scale-100 scale-95
+                          ${
+                            theme === "light"
+                              ? "bg-indigo-600 text-white"
+                              : "bg-indigo-800 text-indigo-100"
+                          }
+                        `}
+                      >
+                        {subItem.name}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
             )}
-          </Link>
+          </div>
         ))}
       </nav>
       {isSidebarOpen && (
