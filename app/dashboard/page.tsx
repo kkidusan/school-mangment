@@ -16,7 +16,7 @@ interface DashboardMetrics {
   totalTeachers: number;
   totalClasses: number;
   unpaidFees: number;
-  upcomingExams: number;
+  totalCourses: number;
   libraryBooks: number;
 }
 
@@ -26,7 +26,7 @@ export default function AdminDashboard() {
     totalTeachers: 0,
     totalClasses: 0,
     unpaidFees: 0,
-    upcomingExams: 0,
+    totalCourses: 0,
     libraryBooks: 0,
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -58,7 +58,7 @@ export default function AdminDashboard() {
         setIsAuthorized(true);
       } catch (error: any) {
         toast.error("Please log in as an admin to access this page");
-        router.push("/login");
+        router.push("/");
       }
     };
 
@@ -72,11 +72,17 @@ export default function AdminDashboard() {
     const fetchMetrics = async () => {
       try {
         setIsLoading(true);
+        const studentsRef = collection(db, "students");
         const teachersRef = collection(db, "teachers");
         const feesRef = collection(db, "fees");
-        const [teachersSnapshot, feesSnapshot] = await Promise.all([
-          getDocs(teachersRef),
+        const coursesRef = collection(db, "courses");
+        const libraryRef = collection(db, "library");
+        const [studentsSnapshot, teachersSnapshot, feesSnapshot, coursesSnapshot, librarySnapshot] = await Promise.all([
+          getDocs(studentsRef).catch(() => ({ docs: [] })),
+          getDocs(teachersRef).catch(() => ({ docs: [] })),
           getDocs(feesRef).catch(() => ({ docs: [] })),
+          getDocs(coursesRef).catch(() => ({ docs: [] })),
+          getDocs(libraryRef).catch(() => ({ docs: [] })),
         ]);
 
         // Calculate total classes from teachers' assigned classes
@@ -90,12 +96,12 @@ export default function AdminDashboard() {
         ).length;
 
         setMetrics({
-          totalStudents: 500, // Replace with query to "students" collection
+          totalStudents: studentsSnapshot.docs.length,
           totalTeachers: teachersSnapshot.docs.length,
           totalClasses,
           unpaidFees,
-          upcomingExams: 5, // Replace with query to "exams" collection
-          libraryBooks: 1000, // Replace with query to "library" collection
+          totalCourses: coursesSnapshot.docs.length,
+          libraryBooks: librarySnapshot.docs.length,
         });
         setIsLoading(false);
       } catch (error) {
@@ -113,42 +119,36 @@ export default function AdminDashboard() {
       title: "Total Students",
       value: metrics.totalStudents,
       href: "/dashboard/students",
-      action: () => toast.info("View and manage student profiles"),
       icon: "👥",
     },
     {
       title: "Total Teachers",
       value: metrics.totalTeachers,
       href: "/dashboard/teachers",
-      action: () => toast.info("View and manage teacher profiles"),
       icon: "🧑‍🏫",
     },
     {
       title: "Total Classes",
       value: metrics.totalClasses,
       href: "/dashboard/academics",
-      action: () => toast.info("Manage classes and schedules"),
       icon: "📚",
     },
     {
       title: "Unpaid Fees",
       value: metrics.unpaidFees,
       href: "/dashboard/fees",
-      action: () => toast.info("Manage fee payments and reminders"),
       icon: "💰",
     },
     {
-      title: "Upcoming Exams",
-      value: metrics.upcomingExams,
-      href: "/dashboard/exams",
-      action: () => toast.info("Schedule and manage exams"),
+      title: "Courses",
+      value: metrics.totalCourses,
+      href: "/dashboard/courses",
       icon: "📝",
     },
     {
       title: "Library Books",
       value: metrics.libraryBooks,
       href: "/dashboard/library",
-      action: () => toast.info("Track library books and resources"),
       icon: "📖",
     },
   ];
@@ -220,7 +220,6 @@ export default function AdminDashboard() {
                     ? "text-blue-600 hover:text-blue-800"
                     : "text-blue-400 hover:text-blue-500"
                 } transition-colors duration-200`}
-                onClick={card.action}
               >
                 Manage →
               </Link>

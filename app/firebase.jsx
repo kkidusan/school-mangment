@@ -1,19 +1,21 @@
-// app/firebase.js
+// app/firebase.jsx
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { getFirestore, collection, query, where, getDocs,groupBy } from "firebase/firestore";
+import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
 
+// Firebase configuration using environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyBG4uR-5VimesBoUDCSIzyzwzxrMqYYluY",
-  authDomain: "school-230b1.firebaseapp.com",
-  projectId: "school-230b1",
-  storageBucket: "school-230b1.firebasestorage.app",
-  messagingSenderId: "357480957762",
-  appId: "1:357480957762:web:a340cb052c8d1d5147aadb",
-  measurementId: "G-YT642FGYC2",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+// Initialize Firebase app
 const app = initializeApp(firebaseConfig);
 
 // Initialize Analytics only in the browser
@@ -25,4 +27,4 @@ if (typeof window !== "undefined") {
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-export { auth, db, analytics, signInWithEmailAndPassword, collection, query, where, groupBy,getDocs };
+export { auth, db, analytics, signInWithEmailAndPassword, collection, query, where, getDocs };

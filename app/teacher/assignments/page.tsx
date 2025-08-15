@@ -43,10 +43,9 @@ interface LessonPlan {
 }
 
 interface StudentMark {
-  [assessmentType: string]: number | string;
+  [assessmentType: string]: number | string | undefined; // Allow undefined in the index signature
   action?: string;
 }
-
 interface Student {
   id: string;
   name: string;

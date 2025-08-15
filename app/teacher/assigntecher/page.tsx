@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useContext, useEffect, useState } from "react";
@@ -46,6 +45,12 @@ export default function AssignTeacher() {
   const [departmentName, setDepartmentName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Ensure ThemeContext is available
+  if (!context) {
+    throw new Error("ThemeContext must be used within a ThemeProvider");
+  }
+  const { theme } = context;
+
   // Define grades in user-friendly format for display
   const grades = [
     "Grade 1",
@@ -65,9 +70,7 @@ export default function AssignTeacher() {
   // Utility function to normalize grade format to `gradeX`
   const normalizeGradeFormat = (grade: string): string => {
     if (!grade) return "N/A";
-    // If grade is already in `gradeX` format, return as is
     if (/^grade\d+$/.test(grade.toLowerCase())) return grade.toLowerCase();
-    // Convert user-friendly grade (e.g., "Grade 1", "1") to `gradeX`
     const gradeNumber = grade.replace(/[^0-9]/g, "");
     return gradeNumber ? `grade${gradeNumber}` : "N/A";
   };
@@ -75,38 +78,40 @@ export default function AssignTeacher() {
   // Utility function to display grade in user-friendly format
   const displayGradeFormat = (grade: string): string => {
     if (!grade || grade === "N/A") return "N/A";
-    // Convert `gradeX` to `Grade X`
     return grade.replace(/^grade(\d+)$/, "Grade $1");
   };
 
   useEffect(() => {
     const validateSession = async () => {
       try {
-        if (!db) {
-          throw new Error("Firebase database is not initialized");
-        }
-
+        // Validate session
         const response = await fetch("/api/validate-teacher", {
           method: "GET",
-          credentials: "include",
+          credentials: "include", // Include cookies
         });
 
         if (!response.ok) {
           const { error } = await response.json();
-          toast.error(error || "Please log in as an admin to access this page");
+          toast.error(error || "Please log in as a teacher to access this page");
           router.push("/");
           return;
         }
 
         const data = await response.json();
+        // Check if role is teacher
         if (data.role !== "teacher") {
-          toast.error("Access denied: Admin role required");
+          toast.error("Access denied: Teacher role required");
           router.push("/");
           return;
         }
 
+        // Set email and authorization
         setUserEmail(data.email || "Unknown");
         setIsAuthorized(true);
+
+        if (!db) {
+          throw new Error("Firebase database is not initialized");
+        }
 
         if (data.email) {
           // Fetch department where hod matches userEmail
@@ -127,7 +132,6 @@ export default function AssignTeacher() {
             const teachersSnapshot = await getDocs(teachersQuery);
             const fetchedTeachers: Teacher[] = teachersSnapshot.docs.map((doc) => {
               const teacherData = doc.data();
-              // Ensure subjectsGrades is an array
               let subjectsGrades: string[] = [];
               if (Array.isArray(teacherData.subjectsGrades)) {
                 subjectsGrades = teacherData.subjectsGrades.map(normalizeGradeFormat);
@@ -169,7 +173,7 @@ export default function AssignTeacher() {
       } catch (error: any) {
         console.error("Error in validateSession:", error);
         setError(error.message || "An unexpected error occurred");
-        toast.error(error.message || "Please log in as an admin to access this page");
+        toast.error(error.message || "Please log in as a teacher to access this page");
         router.push("/");
       } finally {
         setIsLoading(false);

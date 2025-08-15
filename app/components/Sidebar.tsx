@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useContext } from "react";
@@ -5,13 +6,11 @@ import {
   BarChart2,
   Users,
   Calendar,
-  FileText,
   Settings,
   DollarSign,
   BookOpen,
   Bus,
   MessageSquare,
-  Trophy,
   Shield,
   LogOut,
   Book,
@@ -21,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ThemeContext } from "../context/ThemeContext";
 import { toast } from "react-toastify";
+import LogoImage from "../asset/LogoImage.avif";
 
 interface NavItem {
   name: string;
@@ -54,7 +54,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
 
       if (response.ok) {
         toast.success("Logged out successfully");
-        router.push("/login");
+        router.push("/");
       } else {
         toast.error("Logout failed. Please try again.");
       }
@@ -69,16 +69,11 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
     { name: "Student Management", icon: Users, href: "/dashboard/students" },
     { name: "Teacher Management", icon: Users, href: "/dashboard/teachers" },
     { name: "Academic Management", icon: Calendar, href: "/dashboard/academics" },
-    { name: "Examinations", icon: FileText, href: "/dashboard/exams" },
     { name: "Fee Management", icon: DollarSign, href: "/dashboard/fees" },
     { name: "Library Management", icon: BookOpen, href: "/dashboard/library" },
     { name: "Transport Management", icon: Bus, href: "/dashboard/transport" },
-    { name: "Communication", icon: MessageSquare, href: "/dashboard/communication" },
-    { name: "Extracurricular", icon: Trophy, href: "/dashboard/extracurricular" },
     { name: "Security & Access", icon: Shield, href: "/dashboard/security" },
     { name: "Courses", icon: Book, href: "/dashboard/courses" },
-    { name: "Analytics & Reporting", icon: BarChart2, href: "/dashboard/analytics" },
-    { name: "Settings", icon: Settings, href: "/dashboard/settings" },
     { name: "Logout", icon: LogOut, href: "#", action: handleLogout },
   ];
 
@@ -87,9 +82,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
       initial={{ x: -300 }}
       animate={{ x: 0 }}
       transition={{ duration: 0.3 }}
-      className={`fixed inset-y-0 left-0 z-50 ${
-        isSidebarOpen ? "w-64" : "w-16"
-      } ${
+      className={`fixed inset-y-0 left-0 z-50 ${isSidebarOpen ? "w-64" : "w-16"} ${
         theme === "light"
           ? "bg-gradient-to-b from-indigo-100/80 to-purple-100/80 backdrop-blur-lg"
           : "bg-gradient-to-b from-gray-900/80 to-indigo-900/80 backdrop-blur-lg"
@@ -99,7 +92,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
         {isSidebarOpen && (
           <div className="flex items-center gap-2">
             <img
-              src="/logo.png"
+              src={LogoImage.src}
               alt="KK School Logo"
               className="w-8 h-8 object-contain rounded-full"
             />
@@ -144,17 +137,9 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
             {isSidebarOpen && <span className="ml-3 text-sm font-medium">{item.name}</span>}
             {!isSidebarOpen && (
               <span
-                className={`
-                  absolute left-full ml-3 px-3 py-1.5 text-sm font-medium
-                  rounded-lg shadow-lg transform translate-y-[-50%] top-1/2
-                  transition-all duration-200 ease-in-out
-                  opacity-0 group-hover:opacity-100 group-hover:scale-100 scale-95
-                  ${
-                    theme === "light"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-indigo-800 text-indigo-100"
-                  }
-                `}
+                className={`absolute left-full ml-3 px-3 py-1.5 text-sm font-medium rounded-lg shadow-lg transform translate-y-[-50%] top-1/2 transition-all duration-200 ease-in-out opacity-0 group-hover:opacity-100 group-hover:scale-100 scale-95 ${
+                  theme === "light" ? "bg-indigo-600 text-white" : "bg-indigo-800 text-indigo-100"
+                }`}
               >
                 {item.name}
               </span>

@@ -2,8 +2,7 @@
 
 import { useState, useContext, useEffect } from "react";
 import {
-  Calendar, BookOpen, MessageSquare, Settings, LogOut,
-  Brain, FileText, Heart, Trophy, Smartphone, Upload, CheckSquare, Users
+  Calendar, BookOpen, MessageSquare, LogOut, FileText, Upload, CheckSquare, Users
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,6 +10,7 @@ import { motion } from "framer-motion";
 import { ThemeContext } from "../context/ThemeContext";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase"; // Adjust path to your Firebase config
+import LogoImage from "../asset/LogoImage.avif"; // Import the logo image from assets folder
 
 interface NavItem {
   name: string;
@@ -103,7 +103,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
       });
 
       if (response.ok) {
-        router.push("/login");
+        router.push("/");
       } else {
         console.error("Logout failed");
       }
@@ -133,15 +133,14 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
       : []),
     { name: "Assignments", icon: FileText, href: "/teacher/assignments" },
     { name: "Parent Meetings", icon: MessageSquare, href: "/teacher/meetings" },
-    { name: "Extracurricular", icon: Trophy, href: "/teacher/extracurricular" },
-    { name: "Student Welfare", icon: Heart, href: "/teacher/welfare" },
     { name: "Resource Library", icon: Upload, href: "/teacher/resources" },
-    { name: "AI Insights", icon: Brain, href: "/teacher/ai-insights" },
     ...(isHOD
-      ? [{ name: "Approve Lesson", icon: CheckSquare, href: "/teacher/approve-lesson" }]
+      ? [
+          { name: "Approve Lesson", icon: CheckSquare, href: "/teacher/approve-lesson" },
+          { name: "Assign Teachers", icon: Users, href: "/teacher/assigntecher" }
+        ]
       : []),
-    { name: "Settings", icon: Settings, href: "/teacher/settings" },
-    { name: "Logout", icon: LogOut, href: "#", action: handleLogout },
+    { name: "Logout", icon: LogOut, href: "/", action: handleLogout },
   ];
 
   if (!isAuthorized) {
@@ -166,14 +165,16 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
         {isSidebarOpen && (
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <img src="/teacher-profile.jpg" alt="Teacher Profile" className="w-10 h-10 rounded-full" />
+              <img
+                src={LogoImage.src} // Use the imported logo image
+                alt="Teacher Portal Logo"
+                className="w-10 h-10 rounded-full"
+              />
               <h2 className={`text-xl font-bold ${theme === "light" ? "text-zinc-800" : "text-zinc-100"}`}>
                 Teacher Portal
               </h2>
             </div>
-            <span className={`text-sm ${theme === "light" ? "text-zinc-600" : "text-zinc-400"}`}>
-              {userEmail}
-            </span>
+           
           </div>
         )}
         <div className="relative group">
@@ -291,17 +292,7 @@ export default function Sidebar({ isSidebarOpen, toggleSidebar }: SidebarProps) 
           </div>
         ))}
       </nav>
-      {isSidebarOpen && (
-        <div className="absolute bottom-4 p-4">
-          <button
-            className={`w-full p-2 rounded-lg text-sm ${
-              theme === "light" ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-blue-500 text-white hover:bg-blue-600"
-            }`}
-          >
-            Quick Attendance
-          </button>
-        </div>
-      )}
+      
     </motion.aside>
   );
 }

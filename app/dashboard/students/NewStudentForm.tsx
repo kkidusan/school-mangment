@@ -2,12 +2,13 @@
 
 import { useState, useContext } from "react";
 import { db } from "../../firebase";
-import { collection, addDoc, doc, getDoc, setDoc, arrayUnion, updateDoc } from "firebase/firestore"; // Added updateDoc
+import { collection, addDoc, doc, getDoc, setDoc, arrayUnion, updateDoc } from "firebase/firestore";
 import { motion } from "framer-motion";
 import { Loader2, Upload, CheckCircle } from "lucide-react";
 import { ThemeContext } from "../../context/ThemeContext";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { Dispatch, SetStateAction } from "react";
 
 interface StudentFormData {
   fullName: string;
@@ -24,7 +25,7 @@ interface StudentFormData {
 
 interface NewStudentFormProps {
   step: number;
-  setStep: (step: number) => void;
+  setStep: Dispatch<SetStateAction<number>>;
   generateStudentId: () => Promise<string>;
 }
 
@@ -186,9 +187,19 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
             >
               New Student Registration
             </h2>
-            <form onSubmit={(e) => { e.preventDefault(); if (validateForm()) setStep(2); }} className="space-y-4">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (validateForm()) setStep(2);
+              }}
+              className="space-y-4"
+            >
               <div>
-                <label className={`block text-sm font-medium ${theme === "light" ? "text-gray-700" : "text-gray-300"}`}>
+                <label
+                  className={`block text-sm font-medium ${
+                    theme === "light" ? "text-gray-700" : "text-gray-300"
+                  }`}
+                >
                   Full Name
                 </label>
                 <input
@@ -202,7 +213,11 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
                 {errors.fullName && <p className="text-red-500 text-sm">{errors.fullName}</p>}
               </div>
               <div>
-                <label className={`block text-sm font-medium ${theme === "light" ? "text-gray-700" : "text-gray-300"}`}>
+                <label
+                  className={`block text-sm font-medium ${
+                    theme === "light" ? "text-gray-700" : "text-gray-300"
+                  }`}
+                >
                   Date of Birth
                 </label>
                 <input
@@ -216,7 +231,11 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
                 {errors.dob && <p className="text-red-500 text-sm">{errors.dob}</p>}
               </div>
               <div>
-                <label className={`block text-sm font-medium ${theme === "light" ? "text-gray-700" : "text-gray-300"}`}>
+                <label
+                  className={`block text-sm font-medium ${
+                    theme === "light" ? "text-gray-700" : "text-gray-300"
+                  }`}
+                >
                   Gender
                 </label>
                 <select
@@ -231,10 +250,14 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
                   <option value="female">Female</option>
                   <option value="other">Other</option>
                 </select>
-                {errors.gender && <p className="text-red-500 text-sm">{errors.gender}</p>}
+                {errors.gender && <p className="text-red-500 text-sm">{-errors.gender}</p>}
               </div>
               <div>
-                <label className={`block text-sm font-medium ${theme === "light" ? "text-gray-700" : "text-gray-300"}`}>
+                <label
+                  className={`block text-sm font-medium ${
+                    theme === "light" ? "text-gray-700" : "text-gray-300"
+                  }`}
+                >
                   Grade
                 </label>
                 <select
@@ -246,7 +269,9 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
                 >
                   <option value="">Select Grade</option>
                   {Array.from({ length: 8 }, (_, i) => i + 1).map((grade) => (
-                    <option key={grade} value={`grade${grade}`}>Grade {grade}</option>
+                    <option key={grade} value={`grade${grade}`}>
+                      Grade {grade}
+                    </option>
                   ))}
                   <option value="other">Other Grade</option>
                 </select>
@@ -254,7 +279,11 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
               </div>
               {showCustomGradeInput && (
                 <div>
-                  <label className={`block text-sm font-medium ${theme === "light" ? "text-gray-700" : "text-gray-300"}`}>
+                  <label
+                    className={`block text-sm font-medium ${
+                      theme === "light" ? "text-gray-700" : "text-gray-300"
+                    }`}
+                  >
                     Custom Grade
                   </label>
                   <input
@@ -266,11 +295,17 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
                     } p-2 ${theme === "light" ? "bg-white" : "bg-gray-700"}`}
                     placeholder="Enter custom grade"
                   />
-                  {errors.customGrade && <p className="text-red-500 text-sm">{errors.customGrade}</p>}
+                  {errors.customGrade && (
+                    <p className="text-red-500 text-sm">{errors.customGrade}</p>
+                  )}
                 </div>
               )}
               <div>
-                <label className={`block text-sm font-medium ${theme === "light" ? "text-gray-700" : "text-gray-300"}`}>
+                <label
+                  className={`block text-sm font-medium ${
+                    theme === "light" ? "text-gray-700" : "text-gray-300"
+                  }`}
+                >
                   Parent/Guardian Name
                 </label>
                 <input
@@ -281,10 +316,16 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
                     errors.parentName ? "border-red-500" : "border-gray-300"
                   } p-2 ${theme === "light" ? "bg-white" : "bg-gray-700"}`}
                 />
-                {errors.parentName && <p className="text-red-500 text-sm">{errors.parentName}</p>}
+                {errors.parentName && (
+                  <p className="text-red-500 text-sm">{errors.parentName}</p>
+                )}
               </div>
               <div>
-                <label className={`block text-sm font-medium ${theme === "light" ? "text-gray-700" : "text-gray-300"}`}>
+                <label
+                  className={`block text-sm font-medium ${
+                    theme === "light" ? "text-gray-700" : "text-gray-300"
+                  }`}
+                >
                   Parent Contact
                 </label>
                 <input
@@ -295,10 +336,16 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
                     errors.parentContact ? "border-red-500" : "border-gray-300"
                   } p-2 ${theme === "light" ? "bg-white" : "bg-gray-700"}`}
                 />
-                {errors.parentContact && <p className="text-red-500 text-sm">{errors.parentContact}</p>}
+                {errors.parentContact && (
+                  <p className="text-red-500 text-sm">{errors.parentContact}</p>
+                )}
               </div>
               <div>
-                <label className={`block text-sm font-medium ${theme === "light" ? "text-gray-700" : "text-gray-300"}`}>
+                <label
+                  className={`block text-sm font-medium ${
+                    theme === "light" ? "text-gray-700" : "text-gray-300"
+                  }`}
+                >
                   Address
                 </label>
                 <input
@@ -312,7 +359,11 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
                 {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
               </div>
               <div>
-                <label className={`block text-sm font-medium ${theme === "light" ? "text-gray-700" : "text-gray-300"}`}>
+                <label
+                  className={`block text-sm font-medium ${
+                    theme === "light" ? "text-gray-700" : "text-gray-300"
+                  }`}
+                >
                   Previous School (Optional)
                 </label>
                 <input
@@ -325,7 +376,11 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
                 />
               </div>
               <div>
-                <label className={`block text-sm font-medium ${theme === "light" ? "text-gray-700" : "text-gray-300"}`}>
+                <label
+                  className={`block text-sm font-medium ${
+                    theme === "light" ? "text-gray-700" : "text-gray-300"
+                  }`}
+                >
                   Upload Documents
                 </label>
                 <div className="mt-1 flex items-center">
@@ -370,17 +425,39 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
               Review & Submit
             </h2>
             <div className="space-y-4">
-              <p><strong>Student ID:</strong> {formData.stuId || "Will be generated on submit"}</p>
-              <p><strong>Full Name:</strong> {formData.fullName}</p>
-              <p><strong>Date of Birth:</strong> {formData.dob}</p>
-              <p><strong>Gender:</strong> {formData.gender}</p>
-              <p><strong>Grade:</strong> {showCustomGradeInput ? customGrade : formData.grade}</p>
-              <p><strong>Section:</strong> section1</p>
-              <p><strong>Parent Name:</strong> {formData.parentName}</p>
-              <p><strong>Parent Contact:</strong> {formData.parentContact}</p>
-              <p><strong>Address:</strong> {formData.address}</p>
-              <p><strong>Previous School:</strong> {formData.previousSchool || "N/A"}</p>
-              <p><strong>Documents:</strong></p>
+              <p>
+                <strong>Student ID:</strong> {formData.stuId || "Will be generated on submit"}
+              </p>
+              <p>
+                <strong>Full Name:</strong> {formData.fullName}
+              </p>
+              <p>
+                <strong>Date of Birth:</strong> {formData.dob}
+              </p>
+              <p>
+                <strong>Gender:</strong> {formData.gender}
+              </p>
+              <p>
+                <strong>Grade:</strong> {showCustomGradeInput ? customGrade : formData.grade}
+              </p>
+              <p>
+                <strong>Section:</strong> section1
+              </p>
+              <p>
+                <strong>Parent Name:</strong> {formData.parentName}
+              </p>
+              <p>
+                <strong>Parent Contact:</strong> {formData.parentContact}
+              </p>
+              <p>
+                <strong>Address:</strong> {formData.address}
+              </p>
+              <p>
+                <strong>Previous School:</strong> {formData.previousSchool || "N/A"}
+              </p>
+              <p>
+                <strong>Documents:</strong>
+              </p>
               <ul className="list-disc pl-5">
                 {formData.documents.map((file, index) => (
                   <li key={index}>{file.name}</li>
@@ -437,6 +514,8 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
             </button>
           </div>
         );
+      default:
+        return null;
     }
   };
 
