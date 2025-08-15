@@ -2,7 +2,7 @@
 
 import { useState, useContext } from "react";
 import { db } from "../../firebase";
-import { collection, addDoc, doc, getDoc, setDoc, arrayUnion } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc, setDoc, arrayUnion, updateDoc } from "firebase/firestore"; // Added updateDoc
 import { motion } from "framer-motion";
 import { Loader2, Upload, CheckCircle } from "lucide-react";
 import { ThemeContext } from "../../context/ThemeContext";
@@ -59,7 +59,6 @@ export default function NewStudentForm({ step, setStep, generateStudentId }: New
     if (!formData.gender) newErrors.gender = "Gender is required";
     if (!formData.grade && !showCustomGradeInput) newErrors.grade = "Grade is required";
     if (showCustomGradeInput && !customGrade) newErrors.customGrade = "Custom grade is required";
-    if (!formData.parentName) newErrors.parentName = "Parent name is required";
     if (!formData.parentContact || !/^\d{10}$/.test(formData.parentContact))
       newErrors.parentContact = "Valid 10-digit contact number is required";
     if (!formData.address) newErrors.address = "Address is required";
